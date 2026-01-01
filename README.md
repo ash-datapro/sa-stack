@@ -5,15 +5,13 @@
 </p>
 
 <p align="center">
-  <a href="#"><img src="https://img.shields.io/badge/R-%3E%3D4.3-blue"></a>
-  <a href="#"><img src="https://img.shields.io/badge/Shiny-UI-%2300ADD8"></a>
-  <a href="#"><img src="https://img.shields.io/badge/bslib-Bootstrap%205-7952B3"></a>
-  <a href="#"><img src="https://img.shields.io/badge/plumber-REST%20API-%23E76F51"></a>
-  <a href="#"><img src="https://img.shields.io/badge/tidymodels-workflows%20%7C%20recipes-success"></a>
-  <a href="#"><img src="https://img.shields.io/badge/Plotly-interactive%20charts-%233F4F75"></a>
-  <a href="#"><img src="https://img.shields.io/badge/Docker-ready-lightgrey"></a>
-  <a href="#"><img src="https://img.shields.io/badge/docker--compose-one%20command-2496ED"></a>
-  <a href="#"><img src="https://img.shields.io/badge/status-production--style-informational"></a>
+![R](https://img.shields.io/badge/R-276DC3?style=for-the-badge&logo=r&logoColor=white)
+![tidymodels](https://img.shields.io/badge/tidymodels-0F766E?style=for-the-badge&logo=RStudio&logoColor=white)
+![Plumber](https://img.shields.io/badge/Plumber-111827?style=for-the-badge&logo=r&logoColor=white)
+![Shiny](https://img.shields.io/badge/Shiny-0B2A4C?style=for-the-badge&logo=r&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
+![SQL](https://img.shields.io/badge/SQL-025E8C?style=for-the-badge&logo=databricks&logoColor=white)
 </p>
 
 **Sentiment Analysis Stack** is a production-style, end-to-end sentiment analysis project that pairs:
