@@ -4,13 +4,15 @@
   <img src="media/demo.gif" width="100%" alt="Sentiment Explorer demo">
 </p>
 
-![R](https://img.shields.io/badge/R-276DC3?style=for-the-badge&logo=r&logoColor=white)
-![tidymodels](https://img.shields.io/badge/tidymodels-0F766E?style=for-the-badge&logo=RStudio&logoColor=white)
-![Plumber](https://img.shields.io/badge/Plumber-111827?style=for-the-badge&logo=r&logoColor=white)
-![Shiny](https://img.shields.io/badge/Shiny-0B2A4C?style=for-the-badge&logo=r&logoColor=white)
-![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
-![SQL](https://img.shields.io/badge/SQL-025E8C?style=for-the-badge&logo=databricks&logoColor=white)
+<p align="center">
+  <a href="https://www.r-project.org/"><img alt="R" src="https://img.shields.io/badge/R-276DC3?style=for-the-badge&logo=r&logoColor=white"></a>
+  <a href="https://www.tidymodels.org/"><img alt="tidymodels" src="https://img.shields.io/badge/tidymodels-0F766E?style=for-the-badge&logo=rstudio&logoColor=white"></a>
+  <a href="https://www.rplumber.io/"><img alt="Plumber" src="https://img.shields.io/badge/Plumber-111827?style=for-the-badge&logo=r&logoColor=white"></a>
+  <a href="https://shiny.posit.co/"><img alt="Shiny" src="https://img.shields.io/badge/Shiny-0B2A4C?style=for-the-badge&logo=r&logoColor=white"></a>
+  <a href="https://www.docker.com/"><img alt="Docker" src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white"></a>
+  <a href="https://www.postgresql.org/"><img alt="PostgreSQL" src="https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white"></a>
+  <a href="https://en.wikipedia.org/wiki/SQL"><img alt="SQL" src="https://img.shields.io/badge/SQL-025E8C?style=for-the-badge&logo=databricks&logoColor=white"></a>
+</p>
 
 **Sentiment Analysis Stack** is a production-style, end-to-end sentiment analysis project that pairs:
 
