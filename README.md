@@ -4,7 +4,6 @@
   <img src="media/demo.gif" width="100%" alt="Sentiment Explorer demo">
 </p>
 
-<p align="center">
 ![R](https://img.shields.io/badge/R-276DC3?style=for-the-badge&logo=r&logoColor=white)
 ![tidymodels](https://img.shields.io/badge/tidymodels-0F766E?style=for-the-badge&logo=RStudio&logoColor=white)
 ![Plumber](https://img.shields.io/badge/Plumber-111827?style=for-the-badge&logo=r&logoColor=white)
@@ -12,7 +11,6 @@
 ![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
 ![SQL](https://img.shields.io/badge/SQL-025E8C?style=for-the-badge&logo=databricks&logoColor=white)
-</p>
 
 **Sentiment Analysis Stack** is a production-style, end-to-end sentiment analysis project that pairs:
 
