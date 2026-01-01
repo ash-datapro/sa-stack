@@ -1,0 +1,218 @@
+# macOS (Homebrew)
+system("brew services start postgresql", ignore.stdout = TRUE, ignore.stderr = TRUE)
+
+# Set once per session (or put in ~/.Renviron)
+Sys.setenv(
+  SST_DB_HOST = "localhost",
+  SST_DB_PORT = "5432",
+  SST_DB_ADMIN_USER = "postgres",      # superuser / installer user
+  SST_DB_ADMIN_PASSWORD = "api1",
+  SST_DB_USER = "sst_user",
+  SST_DB_PASSWORD = "api",
+  SST_DB_NAME = "sst"
+)
+
+library(DBI)
+library(RPostgres)
+library(dplyr)
+library(stringr)
+library(tibble)
+
+# Helper: allow multi-statement SQL blocks safely with RPostgres/dbExecute
+run_sql = function(con, sql) {
+  stmts = strsplit(sql, ";", fixed = TRUE)[[1]]
+  stmts = trimws(stmts)
+  stmts = stmts[stmts != ""]
+  for (s in stmts) dbExecute(con, s)
+  invisible(TRUE)
+}
+
+# -------------------------
+# Admin: create role + db
+# -------------------------
+admin_con = dbConnect(
+  RPostgres::Postgres(),
+  dbname = "postgres",
+  host = Sys.getenv("SST_DB_HOST"),
+  port = as.integer(Sys.getenv("SST_DB_PORT")),
+  user = Sys.getenv("SST_DB_ADMIN_USER"),
+  password = Sys.getenv("SST_DB_ADMIN_PASSWORD")
+)
+on.exit(dbDisconnect(admin_con), add = TRUE)
+
+db_user = Sys.getenv("SST_DB_USER")
+db_pass = Sys.getenv("SST_DB_PASSWORD")
+db_name = Sys.getenv("SST_DB_NAME")
+
+# Create role (ignore if exists)
+try(
+  dbExecute(
+    admin_con,
+    sprintf(
+      "CREATE ROLE %s WITH LOGIN PASSWORD %s",
+      db_user,
+      dbQuoteString(admin_con, db_pass)
+    )
+  ),
+  silent = TRUE
+)
+
+# Create database (ignore if exists)
+try(
+  dbExecute(
+    admin_con,
+    sprintf("CREATE DATABASE %s OWNER %s", db_name, db_user)
+  ),
+  silent = TRUE
+)
+
+# Optional: ensure privileges (handy if you rerun things)
+try(
+  dbExecute(
+    admin_con,
+    sprintf("GRANT ALL PRIVILEGES ON DATABASE %s TO %s", db_name, db_user)
+  ),
+  silent = TRUE
+)
+
+# -------------------------
+# App: connect to sst DB
+# -------------------------
+con = dbConnect(
+  RPostgres::Postgres(),
+  dbname = Sys.getenv("SST_DB_NAME"),
+  host = Sys.getenv("SST_DB_HOST"),
+  port = as.integer(Sys.getenv("SST_DB_PORT")),
+  user = Sys.getenv("SST_DB_USER"),
+  password = Sys.getenv("SST_DB_PASSWORD")
+)
+on.exit(dbDisconnect(con), add = TRUE)
+
+# -------------------------
+# Prep data
+# -------------------------
+norm_text = function(x) str_trim(str_replace_all(x, "\\s+", " "))
+
+split_map = c("1" = "train", "2" = "test", "3" = "dev")
+
+sent_tbl = datasetSentences %>%
+  transmute(
+    sentence_index = as.integer(sentence_index),
+    sentence = as.character(sentence),
+    sentence_norm = norm_text(as.character(sentence))
+  )
+
+split_tbl = datasetSplit %>%
+  transmute(
+    sentence_index = as.integer(sentence_index),
+    splitset_label = as.integer(splitset_label),
+    split = recode(as.character(splitset_label), !!!split_map, .default = NA_character_)
+  )
+
+dict_tbl = dictionary %>%
+  transmute(
+    phrase_id = as.integer(phrase_id),
+    phrase = as.character(phrase),
+    phrase_norm = norm_text(as.character(phrase))
+  )
+
+labels_tbl = sentiment_labels %>%
+  transmute(
+    phrase_id = as.integer(phrase_id),
+    sentiment = as.double(sentiment)
+  )
+
+tree_tbl = tibble(
+  sentence_index = seq_along(SOStr),
+  sostr = as.character(SOStr),
+  stree = as.character(STree)
+)
+
+# -------------------------
+# DDL (fixed): one statement per execute via run_sql()
+# -------------------------
+dbExecute(con, "CREATE SCHEMA IF NOT EXISTS sst")
+
+run_sql(con, "
+  DROP VIEW IF EXISTS sst.v_sentence_sentiment;
+  DROP TABLE IF EXISTS sst.trees;
+  DROP TABLE IF EXISTS sst.sentiment_labels;
+  DROP TABLE IF EXISTS sst.dictionary;
+  DROP TABLE IF EXISTS sst.splits;
+  DROP TABLE IF EXISTS sst.sentences;
+")
+
+dbExecute(con, "
+  CREATE TABLE sst.sentences (
+    sentence_index INTEGER PRIMARY KEY,
+    sentence TEXT NOT NULL,
+    sentence_norm TEXT NOT NULL
+  )
+")
+
+dbExecute(con, "
+  CREATE TABLE sst.splits (
+    sentence_index INTEGER PRIMARY KEY REFERENCES sst.sentences(sentence_index),
+    splitset_label INTEGER NOT NULL,
+    split TEXT
+  )
+")
+
+dbExecute(con, "
+  CREATE TABLE sst.dictionary (
+    phrase_id INTEGER PRIMARY KEY,
+    phrase TEXT NOT NULL,
+    phrase_norm TEXT NOT NULL
+  )
+")
+
+dbExecute(con, "
+  CREATE TABLE sst.sentiment_labels (
+    phrase_id INTEGER PRIMARY KEY REFERENCES sst.dictionary(phrase_id),
+    sentiment DOUBLE PRECISION NOT NULL
+  )
+")
+
+dbExecute(con, "
+  CREATE TABLE sst.trees (
+    sentence_index INTEGER PRIMARY KEY REFERENCES sst.sentences(sentence_index),
+    sostr TEXT,
+    stree TEXT
+  )
+")
+
+# -------------------------
+# Load data
+# -------------------------
+dbAppendTable(con, Id(schema = "sst", table = "sentences"), sent_tbl)
+dbAppendTable(con, Id(schema = "sst", table = "splits"), split_tbl)
+dbAppendTable(con, Id(schema = "sst", table = "dictionary"), dict_tbl)
+dbAppendTable(con, Id(schema = "sst", table = "sentiment_labels"), labels_tbl)
+dbAppendTable(con, Id(schema = "sst", table = "trees"), tree_tbl)
+
+# -------------------------
+# Indexes + view
+# -------------------------
+dbExecute(con, "CREATE INDEX IF NOT EXISTS idx_splits_split ON sst.splits(split)")
+dbExecute(con, "CREATE INDEX IF NOT EXISTS idx_dict_phrase_norm ON sst.dictionary(phrase_norm)")
+
+dbExecute(con, "
+  CREATE OR REPLACE VIEW sst.v_sentence_sentiment AS
+  SELECT
+    se.sentence_index,
+    sp.split,
+    se.sentence,
+    sl.sentiment
+  FROM sst.sentences se
+  LEFT JOIN sst.splits sp ON sp.sentence_index = se.sentence_index
+  LEFT JOIN sst.dictionary d ON d.phrase_norm = se.sentence_norm
+  LEFT JOIN sst.sentiment_labels sl ON sl.phrase_id = d.phrase_id
+")
+
+# Optional: quick sanity checks
+print(dbGetQuery(con, "SELECT split, COUNT(*) AS n FROM sst.splits GROUP BY 1 ORDER BY 1"))
+print(dbGetQuery(con, "
+  SELECT COUNT(*) AS n_sentences,
+         SUM(CASE WHEN sentiment IS NOT NULL THEN 1 ELSE 0 END) AS n_with_sentiment
+  FROM sst.v_sentence_sentiment
+"))

@@ -1,0 +1,80 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: sentiment_postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-sentiment_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sentiment_password}
+      POSTGRES_DB: ${POSTGRES_DB:-sentiment_db}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # runs your init SQL/scripts on first boot
+      - ./postgresql:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend/api
+    container_name: sentiment_api
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      # hot-reload dev style (optional)
+      - ./backend/api:/usr/src/app
+      # persist artifacts to host
+      - ./backend/reports:/usr/src/app/reports
+    environment:
+      # DB (only matters if your backend uses it)
+      DB_USER: ${POSTGRES_USER:-sentiment_user}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-sentiment_password}
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_NAME: ${POSTGRES_DB:-sentiment_db}
+
+      # Common paths (use these in backend/main.R if you wired env vars)
+      MODEL_RDS: /usr/src/app/model.rds
+      REPORTS_DIR: /usr/src/app/reports
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: sentiment_dashboard
+    ports:
+      - "8501:8501"
+    depends_on:
+      backend:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./frontend:/app
+      - ./data:/app/data:ro
+      - ./backend/api:/app/backend/api:ro
+      - ./backend/reports:/app/backend/reports:ro
+    environment:
+      SHINY_HOST: "0.0.0.0"
+      SHINY_PORT: "8501"
+
+      # If your Shiny app reads env vars for paths, point them to container paths:
+      SENTIMENT_DATA_RDS: /app/data/sst_treebank.rds
+      SENTIMENT_MODEL_RDS: /app/backend/api/model.rds
+
+      # Optional if your UI ever calls the service by URL:
+      SENTIMENT_API_BASE: http://backend:8000
+    restart: unless-stopped
+
+volumes:
+  pgdata:

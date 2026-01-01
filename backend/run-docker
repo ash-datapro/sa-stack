@@ -1,0 +1,16 @@
+# --- from inside backend/ ---
+# 1) Build the image
+docker build -t sentiment-backend .
+
+# 2) Run the container (uses /app/api/model.rds baked into the image)
+docker run --rm -p 8000:8000 \
+  --name sentiment-backend \
+  sentiment-backend
+
+# 3) Test it
+curl -i http://127.0.0.1:8000/health
+curl -i http://127.0.0.1:8000/meta
+
+curl -i -X POST http://127.0.0.1:8000/predict \
+  -H "Content-Type: application/json" \
+  -d '{"text":"This movie was fantastic and I loved it."}'

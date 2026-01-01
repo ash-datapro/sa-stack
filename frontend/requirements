@@ -1,0 +1,14 @@
+shiny
+bslib
+httr
+jsonlite
+
+dplyr
+tidyr
+stringr
+tibble
+readr
+
+DT
+ggplot2
+plotly

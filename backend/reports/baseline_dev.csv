@@ -1,0 +1,2 @@
+model,dataset,accuracy,kap,f_meas
+baseline_majority,eval,0.5054545454545455,0,NA
